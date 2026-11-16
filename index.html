@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小役カウンター">
+<meta name="theme-color" content="#111318">
+<title>小役カウンター</title>
+<style>
+  :root{
+    --bg:#111318; --panel:#1b1e25; --tile:#252a33; --tile-on:#323947;
+    --text:#eef0f4; --sub:#9aa3b2; --line:#2e3440;
+    --red:#e5484d; --green:#30a46c; --yellow:#f5d90a; --blue:#3e8ef7; --purple:#8e4ec6; --orange:#f76b15;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    -webkit-user-select:none;user-select:none;touch-action:manipulation}
+  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 16px)}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px 6px;border-bottom:1px solid var(--line)}
+  .tabs{display:flex;gap:6px}
+  .tab{flex:1;padding:9px 4px;border:none;border-radius:10px;background:var(--panel);color:var(--sub);font-size:14px;font-weight:700}
+  .tab.on{background:var(--blue);color:#fff}
+  .games{display:flex;gap:6px;align-items:stretch;margin-top:8px}
+  .gbox{flex:1;background:var(--panel);border-radius:10px;padding:5px 8px}
+  .gbox label{display:block;font-size:10px;color:var(--sub)}
+  .gbox input{width:100%;background:transparent;border:none;color:var(--text);font-size:20px;font-weight:700;padding:0;outline:none;-webkit-user-select:text;user-select:text}
+  .gbox .val{font-size:20px;font-weight:700}
+  .tools{display:flex;gap:6px;margin-top:6px}
+  .tool{flex:1;padding:8px;border:none;border-radius:10px;background:var(--panel);color:var(--text);font-size:13px;font-weight:600}
+  .tool:disabled{opacity:.35}
+  .tool.warn{color:#ff8b8b}
+  .tool.armed,.reset.armed{background:var(--red);color:#fff}
+  main{padding:10px}
+  .group{background:var(--panel);border-radius:14px;padding:10px;margin-bottom:10px;border-left:4px solid var(--c,var(--blue))}
+  .ghead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .gtitle{font-size:14px;font-weight:700}
+  .reset{border:none;border-radius:8px;background:var(--tile);color:var(--sub);font-size:11px;padding:6px 8px;font-weight:600;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid.one{grid-template-columns:1fr}
+  .tile{position:relative;border:none;border-radius:12px;background:var(--tile);color:var(--text);
+    min-height:84px;padding:8px 10px;text-align:left;transition:background .08s, transform .08s}
+  .tile:active,.tile.pop{background:var(--tile-on);transform:scale(.97)}
+  .tile .lbl{font-size:12px;color:var(--sub);font-weight:600;padding-right:38px}
+  .tile .num{font-size:36px;font-weight:800;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+  .minus{position:absolute;top:6px;right:6px;width:36px;height:30px;border:none;border-radius:8px;
+    background:rgba(255,255,255,.08);color:var(--sub);font-size:16px;font-weight:700}
+  .stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:13px;color:var(--sub)}
+  .stats b{color:var(--text);font-size:15px;font-variant-numeric:tabular-nums}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);
+    background:#000c;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="tabs" id="tabs"></div>
+  <div class="games">
+    <div class="gbox"><label>開始G</label><input id="startG" type="number" inputmode="numeric" placeholder="0"></div>
+    <div class="gbox"><label>現在G</label><input id="curG" type="number" inputmode="numeric" placeholder="0"></div>
+    <div class="gbox"><label>消化G</label><div class="val" id="playedG">0</div></div>
+  </div>
+  <div class="tools">
+    <button class="tool" id="undoBtn">↶ 元に戻す</button>
+    <button class="tool warn" id="clearBtn">全リセット</button>
+  </div>
+</header>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   機種設定 — ここを書き換えればカスタマイズできます
+   items : カウントするボタン（id は機種内で重複しないこと）
+   reset : グループ単位のリセットボタン（CZ当選など）
+   stats : 表示する計算値
+     prob  … 消化G ÷ 回数 → 1/x 表示
+     rate  … num ÷ den → %（例：当選数 ÷ 回数）
+     share … a ÷ (a + b) → %（例：発光 ÷ (発光+非発光)）
+   color : グループ左端の色
+   ========================================================= */
+const MACHINES = [
+  {
+    id: 'kabaneri',
+    name: 'カバネリ 海門決戦',
+    groups: [
+      { title: '帯無し 赤緑チャンス目', color: 'var(--yellow)',
+        items: [ {id:'obiTotal', label:'総数'}, {id:'obiFlash', label:'発光'} ],
+        stats: [ {type:'rate', label:'発光率', num:'obiFlash', den:'obiTotal'} ] },
+      { title: '赤チャンス目', color: 'var(--red)',
+        reset: { label: '無名CZ当選 → リセット' },
+        items: [ {id:'redOn', label:'発光'}, {id:'redOff', label:'非発光'} ],
+        stats: [ {type:'share', label:'発光率', a:'redOn', b:'redOff'} ] },
+      { title: '緑チャンス目', color: 'var(--green)',
+        reset: { label: '生駒CZ当選 → リセット' },
+        items: [ {id:'grnOn', label:'発光'}, {id:'grnOff', label:'非発光'} ],
+        stats: [ {type:'share', label:'発光率', a:'grnOn', b:'grnOff'} ] },
+      { title: '下段ベル', color: 'var(--blue)', single: true,
+        items: [ {id:'lowBell', label:'下段ベル'} ],
+        stats: [ {type:'prob', label:'確率', num:'lowBell'} ] },
+    ]
+  },
+  {
+    id: 'bofuri',
+    name: '防振り',
+    groups: [
+      { title: '通常時ヒドラ目', color: 'var(--purple)',
+        items: [ {id:'hydra', label:'ヒドラ目'}, {id:'hydraWin', label:'高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'hydraWin', den:'hydra'} ] },
+      { title: '夕方レア役', color: 'var(--orange)',
+        items: [ {id:'evRare', label:'レア役'}, {id:'evRareWin', label:'高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'evRareWin', den:'evRare'} ] },
+      { title: '初当たり', color: 'var(--red)',
+        items: [ {id:'first', label:'初当たり'}, {id:'firstBet', label:'ベット高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'firstBet', den:'first'}, {type:'prob', label:'初当たり確率', num:'first'} ] },
+      { title: '300G', color: 'var(--green)',
+        items: [ {id:'g300', label:'踏んだ'}, {id:'g300Win', label:'高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'g300Win', den:'g300'} ] },
+      { title: '450G', color: 'var(--green)',
+        items: [ {id:'g450', label:'踏んだ'}, {id:'g450Win', label:'高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'g450Win', den:'g450'} ] },
+      { title: '650G', color: 'var(--green)',
+        items: [ {id:'g650', label:'踏んだ'}, {id:'g650Win', label:'高確当選'} ],
+        stats: [ {type:'rate', label:'当選率', num:'g650Win', den:'g650'} ] },
+      { title: '上段ベル', color: 'var(--blue)', single: true,
+        items: [ {id:'topBell', label:'上段ベル'} ],
+        stats: [ {type:'prob', label:'確率', num:'topBell'} ] },
+    ]
+  }
+];
+
+/* ================= 保存 ================= */
+const KEY = 'slotCounter.v1';
+let state = load();
+function blank(){
+  const s = { active: MACHINES[0].id, data: {} };
+  MACHINES.forEach(m => s.data[m.id] = { counts:{}, startG:'', curG:'', history:[] });
+  return s;
+}
+function load(){
+  let s = blank();
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const saved = JSON.parse(raw);
+      if(saved && saved.data){
+        s.active = saved.active || s.active;
+        MACHINES.forEach(m => { if(saved.data[m.id]) s.data[m.id] = Object.assign(s.data[m.id], saved.data[m.id]); });
+      }
+    }
+  }catch(e){}
+  if(!MACHINES.find(m => m.id === s.active)) s.active = MACHINES[0].id;
+  return s;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+/* ================= 計算 ================= */
+const machine = () => MACHINES.find(m => m.id === state.active);
+const D = () => state.data[state.active];
+const cnt = id => D().counts[id] || 0;
+function played(){
+  const s = parseInt(D().startG, 10) || 0, c = parseInt(D().curG, 10) || 0;
+  return Math.max(0, c - s);
+}
+function statText(st){
+  if(st.type === 'prob'){
+    const n = cnt(st.num), g = played();
+    return n > 0 && g > 0 ? '1/' + (g / n).toFixed(1) : '—';
+  }
+  if(st.type === 'rate'){
+    const n = cnt(st.num), d = cnt(st.den);
+    return d > 0 ? (n / d * 100).toFixed(1) + '%' + ` <span>(${n}/${d})</span>` : '—';
+  }
+  if(st.type === 'share'){
+    const a = cnt(st.a), b = cnt(st.b), t = a + b;
+    return t > 0 ? (a / t * 100).toFixed(1) + '%' + ` <span>(${a}/${t})</span>` : '—';
+  }
+  return '';
+}
+
+/* ================= 操作 ================= */
+function pushHistory(entry){
+  const h = D().history; h.push(entry); if(h.length > 200) h.shift();
+}
+function change(id, delta){
+  const before = cnt(id), after = Math.max(0, before + delta);
+  if(before === after) return;
+  pushHistory({ type:'set', values:{ [id]: before } });
+  D().counts[id] = after;
+  save(); render();
+}
+function resetGroup(g){
+  const values = {};
+  g.items.forEach(it => values[it.id] = cnt(it.id));
+  pushHistory({ type:'set', values });
+  g.items.forEach(it => D().counts[it.id] = 0);
+  save(); render(); toast(g.title + ' をリセットしました');
+}
+function undo(){
+  const e = D().history.pop();
+  if(!e) return;
+  Object.entries(e.values).forEach(([k, v]) => D().counts[k] = v);
+  save(); render(); toast('元に戻しました');
+}
+function clearAll(){
+  state.data[state.active] = { counts:{}, startG:'', curG:'', history:[] };
+  save(); render(); toast('全てリセットしました');
+}
+
+/* 2回タップで確定（誤操作防止） */
+function armed(btn, original, action){
+  if(btn.classList.contains('armed')){
+    clearTimeout(btn._t); btn.classList.remove('armed'); btn.textContent = original; action();
+    return;
+  }
+  btn.classList.add('armed'); btn.textContent = 'もう一度タップで実行';
+  btn._t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = original; }, 2500);
+}
+
+let toastT;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+/* ================= 描画 ================= */
+function render(){
+  const m = machine();
+  document.getElementById('tabs').innerHTML = MACHINES.map(x =>
+    `<button class="tab ${x.id === state.active ? 'on' : ''}" data-tab="${x.id}">${x.name}</button>`).join('');
+  const sg = document.getElementById('startG'), cg = document.getElementById('curG');
+  if(document.activeElement !== sg) sg.value = D().startG;
+  if(document.activeElement !== cg) cg.value = D().curG;
+  document.getElementById('playedG').textContent = played();
+  document.getElementById('undoBtn').disabled = D().history.length === 0;
+
+  document.getElementById('main').innerHTML = m.groups.map((g, gi) => `
+    <section class="group" style="--c:${g.color || 'var(--blue)'}">
+      <div class="ghead">
+        <div class="gtitle">${g.title}</div>
+        ${g.reset ? `<button class="reset" data-reset="${gi}">${g.reset.label}</button>` : ''}
+      </div>
+      <div class="grid ${g.single ? 'one' : ''}">
+        ${g.items.map(it => `
+          <button class="tile" data-inc="${it.id}">
+            <div class="lbl">${it.label}</div>
+            <div class="num">${cnt(it.id)}</div>
+            <span class="minus" data-dec="${it.id}" role="button" aria-label="${it.label}を1減らす">−</span>
+          </button>`).join('')}
+      </div>
+      ${g.stats && g.stats.length ? `<div class="stats">${g.stats.map(st =>
+        `<div>${st.label} <b>${statText(st)}</b></div>`).join('')}</div>` : ''}
+    </section>`).join('');
+}
+
+/* ================= イベント ================= */
+document.addEventListener('click', e => {
+  const tab = e.target.closest('[data-tab]');
+  if(tab){ state.active = tab.dataset.tab; save(); render(); window.scrollTo(0,0); return; }
+  const dec = e.target.closest('[data-dec]');
+  if(dec){ change(dec.dataset.dec, -1); return; }
+  const inc = e.target.closest('[data-inc]');
+  if(inc){ change(inc.dataset.inc, +1); return; }
+  const rs = e.target.closest('[data-reset]');
+  if(rs){ const g = machine().groups[+rs.dataset.reset]; armed(rs, g.reset.label, () => resetGroup(g)); return; }
+});
+document.getElementById('undoBtn').addEventListener('click', undo);
+const clearBtn = document.getElementById('clearBtn');
+clearBtn.addEventListener('click', () => armed(clearBtn, '全リセット', clearAll));
+['startG','curG'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    D()[id] = el.value; save();
+    render(); // 消化G・確率表示を更新
+  });
+});
+/* ダブルタップ拡大を防止 */
+let lastTouch = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if(now - lastTouch < 300 && !e.target.closest('input')) e.preventDefault();
+  lastTouch = now;
+}, { passive:false });
+
+render();
+</script>
+</body>
+</html>
