@@ -152,12 +152,12 @@ const MACHINES = [
         reset: { label: '無名CZ当選 リセット' },
         items: [ {id:'redOn', label:'発光'}, {id:'redOff', label:'非発光'} ],
         stats: [ {type:'share', label:'発光率', a:'redOn', b:'redOff'},
-                 {type:'points', label:'', a:'redOn', aPt:15, b:'redOff', bPt:1, max:150, carry:'redCarry', log:'redLog'} ] },
+                 {type:'points', label:'', a:'redOn', aPt:10, b:'redOff', bPt:1, max:100, carry:'redCarry', log:'redLog'} ] },
       { title: '生駒チャンス目', color: 'var(--green)',
         reset: { label: '生駒CZ当選 リセット' },
         items: [ {id:'grnOn', label:'発光'}, {id:'grnOff', label:'非発光'} ],
         stats: [ {type:'share', label:'発光率', a:'grnOn', b:'grnOff'},
-                 {type:'points', label:'', a:'grnOn', aPt:15, b:'grnOff', bPt:1, max:150, carry:'grnCarry', log:'grnLog'} ] },
+                 {type:'points', label:'', a:'grnOn', aPt:10, b:'grnOff', bPt:1, max:100, carry:'grnCarry', log:'grnLog'} ] },
       { title: '下段ベル', color: 'var(--blue)',
         items: [ {id:'lowBell', label:'下段ベル'} ],
         stats: [ {type:'prob', label:'確率', num:'lowBell'} ] },
@@ -363,7 +363,7 @@ function logHtml(st){
   const L = logOf(st.log);
   const avgNum = L.length ? L.reduce((a, b) => a + b, 0) / L.length : null;
   const avg = avgNum === null ? '—' : avgNum.toFixed(1) + 'pt';
-  const per15 = avgNum === null ? '—' : (avgNum / 15).toFixed(2) + '回発光';   // 平均ポイント ÷ 15
+  const per15 = avgNum === null ? '—' : (avgNum / st.aPt).toFixed(2) + '回発光';   // 平均ポイント ÷ 発光1回のポイント
   const recent = L.slice(-8).reverse().join(' / ');          // 新しい順に最大8件
   return `<div class="log">
     <div>リセット時平均 <b>${avg}</b> (${per15})</div>
