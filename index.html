@@ -343,6 +343,11 @@ document.addEventListener('touchend', e => {
 }, { passive:false });
 
 render();
+
+/* オフライン対応（sw.js を同じ場所に置いておく） */
+if('serviceWorker' in navigator){
+  try{ navigator.serviceWorker.register('sw.js').catch(() => {}); }catch(e){}
+}
 </script>
 </body>
 </html>
