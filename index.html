@@ -11,62 +11,83 @@
 <title>小役カウンター</title>
 <style>
   :root{
-    --bg:#111318; --panel:#1b1e25; --tile:#252a33; --tile-on:#323947;
+    --bg:#111318; --panel:#1b1e25; --tile:#262b35; --tile-on:#3a4252;
     --text:#eef0f4; --sub:#9aa3b2; --line:#2e3440;
     --red:#e5484d; --green:#30a46c; --yellow:#f5d90a; --blue:#3e8ef7; --purple:#8e4ec6; --orange:#f76b15;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;background:var(--bg);color:var(--text);
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
-    -webkit-user-select:none;user-select:none;touch-action:manipulation}
-  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 16px)}
-  header{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 10px 6px;border-bottom:1px solid var(--line)}
-  .tabs{display:flex;gap:6px}
-  .tab{flex:1;padding:9px 4px;border:none;border-radius:10px;background:var(--panel);color:var(--sub);font-size:14px;font-weight:700}
+    -webkit-user-select:none;user-select:none;touch-action:manipulation;overflow:hidden}
+  body{
+    height:100vh;height:100dvh;display:flex;flex-direction:column;
+    padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right))
+            max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
+  }
+
+  /* ---------- 上部バー（1行） ---------- */
+  header{display:flex;gap:5px;align-items:stretch;height:38px;flex:none;margin-bottom:5px}
+  .tab{border:none;border-radius:8px;background:var(--panel);color:var(--sub);font-size:13px;font-weight:700;padding:0 12px;white-space:nowrap}
   .tab.on{background:var(--blue);color:#fff}
-  .games{display:flex;gap:6px;align-items:stretch;margin-top:8px}
-  .gbox{flex:1;background:var(--panel);border-radius:10px;padding:5px 8px}
-  .gbox label{display:block;font-size:10px;color:var(--sub)}
-  .gbox input{width:100%;background:transparent;border:none;color:var(--text);font-size:20px;font-weight:700;padding:0;outline:none;-webkit-user-select:text;user-select:text}
-  .gbox .val{font-size:20px;font-weight:700}
-  .tools{display:flex;gap:6px;margin-top:6px}
-  .tool{flex:1;padding:8px;border:none;border-radius:10px;background:var(--panel);color:var(--text);font-size:13px;font-weight:600}
+  .gbox{display:flex;align-items:center;gap:5px;background:var(--panel);border-radius:8px;padding:0 8px;min-width:0;flex:1}
+  .gbox label{font-size:10px;color:var(--sub);white-space:nowrap}
+  .gbox input,.gbox .val{width:100%;min-width:0;background:transparent;border:none;color:var(--text);
+    font-size:18px;font-weight:700;padding:0;outline:none;font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text}
+  .tool{border:none;border-radius:8px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700;padding:0 10px;white-space:nowrap}
   .tool:disabled{opacity:.35}
   .tool.warn{color:#ff8b8b}
-  .tool.armed,.reset.armed{background:var(--red);color:#fff}
-  main{padding:10px}
-  .group{background:var(--panel);border-radius:14px;padding:10px;margin-bottom:10px;border-left:4px solid var(--c,var(--blue))}
-  .ghead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-  .gtitle{font-size:14px;font-weight:700}
-  .reset{border:none;border-radius:8px;background:var(--tile);color:var(--sub);font-size:11px;padding:6px 8px;font-weight:600;white-space:nowrap}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .grid.one{grid-template-columns:1fr}
-  .tile{position:relative;border:none;border-radius:12px;background:var(--tile);color:var(--text);
-    min-height:84px;padding:8px 10px;text-align:left;transition:background .08s, transform .08s}
-  .tile:active,.tile.pop{background:var(--tile-on);transform:scale(.97)}
-  .tile .lbl{font-size:12px;color:var(--sub);font-weight:600;padding-right:38px}
-  .tile .num{font-size:36px;font-weight:800;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
-  .minus{position:absolute;top:6px;right:6px;width:36px;height:30px;border:none;border-radius:8px;
-    background:rgba(255,255,255,.08);color:var(--sub);font-size:16px;font-weight:700}
-  .stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:13px;color:var(--sub)}
-  .stats b{color:var(--text);font-size:15px;font-variant-numeric:tabular-nums}
-  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);
-    background:#000c;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .armed{background:var(--red)!important;color:#fff!important}
+
+  /* ---------- 本体：グループを横並び ---------- */
+  main{flex:1;min-height:0;display:flex;gap:5px}
+  .group{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;
+    background:var(--panel);border-radius:10px;padding:5px;border-top:3px solid var(--c,var(--blue))}
+  .gtitle{font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
+  .tiles{flex:1;min-height:0;display:flex;flex-direction:column;gap:4px}
+  .tile{position:relative;flex:1;min-height:0;border:none;border-radius:8px;background:var(--tile);color:var(--text);
+    padding:4px 6px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;
+    transition:background .06s,transform .06s;overflow:hidden}
+  .tile:active{background:var(--tile-on);transform:scale(.97)}
+  .tile .lbl{font-size:11px;color:var(--sub);font-weight:600;line-height:1.2}
+  .tile .num{font-size:clamp(22px,11vh,56px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .minus{position:absolute;right:3px;bottom:3px;width:30px;height:26px;border-radius:6px;
+    background:rgba(255,255,255,.09);color:var(--sub);font-size:16px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .stats{flex:none;display:flex;flex-wrap:wrap;column-gap:10px;font-size:10px;color:var(--sub);line-height:1.35}
+  .stats b{color:var(--text);font-size:12px;font-variant-numeric:tabular-nums}
+  .log{flex:none;font-size:10px;color:var(--sub);line-height:1.35;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 6px}
+  .log b{color:var(--text);font-size:12px;font-variant-numeric:tabular-nums}
+  .log .row{display:flex;gap:6px}
+  .log .recent{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+  .log .times{flex:none;color:var(--text);font-weight:700}
+  .reset{flex:none;border:none;border-radius:6px;background:var(--tile);color:var(--sub);font-size:10px;font-weight:700;padding:5px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- 縦向き時：縦スクロールで2列 ---------- */
+  @media (orientation: portrait){
+    html,body{overflow:auto}
+    body{height:auto;min-height:100dvh}
+    header{flex-wrap:wrap;height:auto}
+    header .tab{flex:1;height:38px}
+    header .gbox,header .tool{height:38px}
+    main{flex-wrap:wrap}
+    .group{flex:1 1 calc(50% - 5px)}
+    .tile{min-height:76px;flex:none}
+    .tile .num{font-size:34px}
+  }
+
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 14px);transform:translateX(-50%);
+    background:#000d;color:#fff;padding:7px 14px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
   .toast.show{opacity:1}
 </style>
 </head>
 <body>
 <header>
-  <div class="tabs" id="tabs"></div>
-  <div class="games">
-    <div class="gbox"><label>開始G</label><input id="startG" type="number" inputmode="numeric" placeholder="0"></div>
-    <div class="gbox"><label>現在G</label><input id="curG" type="number" inputmode="numeric" placeholder="0"></div>
-    <div class="gbox"><label>消化G</label><div class="val" id="playedG">0</div></div>
-  </div>
-  <div class="tools">
-    <button class="tool" id="undoBtn">↶ 元に戻す</button>
-    <button class="tool warn" id="clearBtn">全リセット</button>
-  </div>
+  <span id="tabs" style="display:contents"></span>
+  <div class="gbox"><label>開始G</label><input id="startG" type="number" inputmode="numeric" placeholder="0"></div>
+  <div class="gbox"><label>現在G</label><input id="curG" type="number" inputmode="numeric" placeholder="0"></div>
+  <div class="gbox"><label>消化G</label><div class="val" id="playedG">0</div></div>
+  <button class="tool" id="undoBtn">↶ 戻す</button>
+  <button class="tool warn" id="clearBtn">全リセット</button>
 </header>
 <main id="main"></main>
 <div class="toast" id="toast"></div>
@@ -74,48 +95,55 @@
 <script>
 /* =========================================================
    機種設定 — ここを書き換えればカスタマイズできます
+   short : タブに表示する短い名前
    items : カウントするボタン（id は機種内で重複しないこと）
    reset : グループ単位のリセットボタン（CZ当選など）
    stats : 表示する計算値
      prob  … 消化G ÷ 回数 → 1/x 表示
      rate  … num ÷ den → %（例：当選数 ÷ 回数）
      share … a ÷ (a + b) → %（例：発光 ÷ (発光+非発光)）
-   color : グループ左端の色
+     points… a×aPt + b×bPt → 「X/maxpt」表示
+             carry を指定すると、リセット時に max を超えた分を繰り越す
+             log を指定すると、リセット時のポイント（最大 max）を履歴に残し平均を表示
+   color : グループ上端の色
    ========================================================= */
 const MACHINES = [
   {
-    id: 'kabaneri',
-    name: 'カバネリ 海門決戦',
+    id: 'kabaneri', short: 'カバネリ',
     groups: [
       { title: '帯無し 赤緑チャンス目', color: 'var(--yellow)',
         items: [ {id:'obiTotal', label:'総数'}, {id:'obiFlash', label:'発光'} ],
         stats: [ {type:'rate', label:'発光率', num:'obiFlash', den:'obiTotal'} ] },
-      { title: '赤チャンス目', color: 'var(--red)',
-        reset: { label: '無名CZ当選 → リセット' },
+      { title: '無名チャンス目', color: 'var(--red)',
+        reset: { label: '無名CZ当選 リセット' },
         items: [ {id:'redOn', label:'発光'}, {id:'redOff', label:'非発光'} ],
-        stats: [ {type:'share', label:'発光率', a:'redOn', b:'redOff'} ] },
-      { title: '緑チャンス目', color: 'var(--green)',
-        reset: { label: '生駒CZ当選 → リセット' },
+        stats: [ {type:'share', label:'発光率', a:'redOn', b:'redOff'},
+                 {type:'points', label:'', a:'redOn', aPt:15, b:'redOff', bPt:1, max:150, carry:'redCarry', log:'redLog'} ] },
+      { title: '生駒チャンス目', color: 'var(--green)',
+        reset: { label: '生駒CZ当選 リセット' },
         items: [ {id:'grnOn', label:'発光'}, {id:'grnOff', label:'非発光'} ],
-        stats: [ {type:'share', label:'発光率', a:'grnOn', b:'grnOff'} ] },
-      { title: '下段ベル', color: 'var(--blue)', single: true,
+        stats: [ {type:'share', label:'発光率', a:'grnOn', b:'grnOff'},
+                 {type:'points', label:'', a:'grnOn', aPt:15, b:'grnOff', bPt:1, max:150, carry:'grnCarry', log:'grnLog'} ] },
+      { title: '下段ベル', color: 'var(--blue)',
         items: [ {id:'lowBell', label:'下段ベル'} ],
         stats: [ {type:'prob', label:'確率', num:'lowBell'} ] },
     ]
   },
   {
-    id: 'bofuri',
-    name: '防振り',
+    id: 'bofuri', short: '防振り',
     groups: [
-      { title: '通常時ヒドラ目', color: 'var(--purple)',
+      { title: 'ヒドラ目(通常)', color: 'var(--purple)',
         items: [ {id:'hydra', label:'ヒドラ目'}, {id:'hydraWin', label:'高確当選'} ],
         stats: [ {type:'rate', label:'当選率', num:'hydraWin', den:'hydra'} ] },
+      { title: '上段ベル', color: 'var(--blue)',
+        items: [ {id:'topBell', label:'上段ベル'} ],
+        stats: [ {type:'prob', label:'確率', num:'topBell'} ] },
       { title: '夕方レア役', color: 'var(--orange)',
         items: [ {id:'evRare', label:'レア役'}, {id:'evRareWin', label:'高確当選'} ],
         stats: [ {type:'rate', label:'当選率', num:'evRareWin', den:'evRare'} ] },
       { title: '初当たり', color: 'var(--red)',
-        items: [ {id:'first', label:'初当たり'}, {id:'firstBet', label:'ベット高確当選'} ],
-        stats: [ {type:'rate', label:'当選率', num:'firstBet', den:'first'}, {type:'prob', label:'初当たり確率', num:'first'} ] },
+        items: [ {id:'first', label:'初当たり'}, {id:'firstBet', label:'ベット高確'} ],
+        stats: [ {type:'rate', label:'当選率', num:'firstBet', den:'first'}, {type:'prob', label:'初当り', num:'first'} ] },
       { title: '300G', color: 'var(--green)',
         items: [ {id:'g300', label:'踏んだ'}, {id:'g300Win', label:'高確当選'} ],
         stats: [ {type:'rate', label:'当選率', num:'g300Win', den:'g300'} ] },
@@ -125,9 +153,6 @@ const MACHINES = [
       { title: '650G', color: 'var(--green)',
         items: [ {id:'g650', label:'踏んだ'}, {id:'g650Win', label:'高確当選'} ],
         stats: [ {type:'rate', label:'当選率', num:'g650Win', den:'g650'} ] },
-      { title: '上段ベル', color: 'var(--blue)', single: true,
-        items: [ {id:'topBell', label:'上段ベル'} ],
-        stats: [ {type:'prob', label:'確率', num:'topBell'} ] },
     ]
   }
 ];
@@ -137,7 +162,7 @@ const KEY = 'slotCounter.v1';
 let state = load();
 function blank(){
   const s = { active: MACHINES[0].id, data: {} };
-  MACHINES.forEach(m => s.data[m.id] = { counts:{}, startG:'', curG:'', history:[] });
+  MACHINES.forEach(m => s.data[m.id] = { counts:{}, logs:{}, startG:'', curG:'', history:[] });
   return s;
 }
 function load(){
@@ -153,6 +178,7 @@ function load(){
     }
   }catch(e){}
   if(!MACHINES.find(m => m.id === s.active)) s.active = MACHINES[0].id;
+  MACHINES.forEach(m => { if(!s.data[m.id].logs) s.data[m.id].logs = {}; });
   return s;
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
@@ -161,9 +187,14 @@ function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e
 const machine = () => MACHINES.find(m => m.id === state.active);
 const D = () => state.data[state.active];
 const cnt = id => D().counts[id] || 0;
+const logOf = key => D().logs[key] || [];
 function played(){
   const s = parseInt(D().startG, 10) || 0, c = parseInt(D().curG, 10) || 0;
   return Math.max(0, c - s);
+}
+/* ポイント = 前回リセット時の繰り越し + a×aPt + b×bPt */
+function points(st){
+  return (st.carry ? cnt(st.carry) : 0) + cnt(st.a) * st.aPt + cnt(st.b) * st.bPt;
 }
 function statText(st){
   if(st.type === 'prob'){
@@ -172,12 +203,13 @@ function statText(st){
   }
   if(st.type === 'rate'){
     const n = cnt(st.num), d = cnt(st.den);
-    return d > 0 ? (n / d * 100).toFixed(1) + '%' + ` <span>(${n}/${d})</span>` : '—';
+    return d > 0 ? (n / d * 100).toFixed(1) + '%' : '—';
   }
   if(st.type === 'share'){
     const a = cnt(st.a), b = cnt(st.b), t = a + b;
-    return t > 0 ? (a / t * 100).toFixed(1) + '%' + ` <span>(${a}/${t})</span>` : '—';
+    return t > 0 ? (a / t * 100).toFixed(1) + '%' + ` (${a}/${t})` : '—';
   }
+  if(st.type === 'points') return `${points(st)}/${st.max}pt`;
   return '';
 }
 
@@ -188,25 +220,41 @@ function pushHistory(entry){
 function change(id, delta){
   const before = cnt(id), after = Math.max(0, before + delta);
   if(before === after) return;
-  pushHistory({ type:'set', values:{ [id]: before } });
+  pushHistory({ values:{ [id]: before } });
   D().counts[id] = after;
   save(); render();
 }
 function resetGroup(g){
   const values = {};
   g.items.forEach(it => values[it.id] = cnt(it.id));
-  pushHistory({ type:'set', values });
+  /* ポイントが上限を超えていたら、上限分だけ引いて残りを繰り越す */
+  const carries = [], logs = {};
+  (g.stats || []).filter(st => st.type === 'points').forEach(st => {
+    const pt = points(st);
+    if(st.carry){
+      values[st.carry] = cnt(st.carry);
+      carries.push([st.carry, Math.max(0, pt - st.max)]);
+    }
+    if(st.log){
+      logs[st.log] = logOf(st.log).slice();               // 戻す用に控える
+      D().logs[st.log] = logOf(st.log).concat(Math.min(pt, st.max));
+    }
+  });
+  pushHistory({ values, logs });
   g.items.forEach(it => D().counts[it.id] = 0);
-  save(); render(); toast(g.title + ' をリセットしました');
+  carries.forEach(([k, v]) => D().counts[k] = v);
+  const left = carries.reduce((s, [, v]) => s + v, 0);
+  save(); render(); toast(g.title + ' をリセット' + (left > 0 ? `（${left}pt 繰り越し）` : ''));
 }
 function undo(){
   const e = D().history.pop();
   if(!e) return;
   Object.entries(e.values).forEach(([k, v]) => D().counts[k] = v);
+  if(e.logs) Object.entries(e.logs).forEach(([k, v]) => D().logs[k] = v);
   save(); render(); toast('元に戻しました');
 }
 function clearAll(){
-  state.data[state.active] = { counts:{}, startG:'', curG:'', history:[] };
+  state.data[state.active] = { counts:{}, logs:{}, startG:'', curG:'', history:[] };
   save(); render(); toast('全てリセットしました');
 }
 
@@ -216,7 +264,7 @@ function armed(btn, original, action){
     clearTimeout(btn._t); btn.classList.remove('armed'); btn.textContent = original; action();
     return;
   }
-  btn.classList.add('armed'); btn.textContent = 'もう一度タップで実行';
+  btn.classList.add('armed'); btn.textContent = 'もう一度';
   btn._t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = original; }, 2500);
 }
 
@@ -228,10 +276,21 @@ function toast(msg){
 }
 
 /* ================= 描画 ================= */
+function logHtml(st){
+  const L = logOf(st.log);
+  const avgNum = L.length ? L.reduce((a, b) => a + b, 0) / L.length : null;
+  const avg = avgNum === null ? '—' : avgNum.toFixed(1) + 'pt';
+  const per15 = avgNum === null ? '—' : (avgNum / 15).toFixed(2) + '回発光';   // 平均ポイント ÷ 15
+  const recent = L.slice(-8).reverse().join(' / ');          // 新しい順に最大8件
+  return `<div class="log">
+    <div>リセット時平均 <b>${avg}</b> (${per15})</div>
+    <div class="row"><span class="recent">${recent || '履歴なし'}</span><span class="times">${L.length}回</span></div>
+  </div>`;
+}
 function render(){
   const m = machine();
   document.getElementById('tabs').innerHTML = MACHINES.map(x =>
-    `<button class="tab ${x.id === state.active ? 'on' : ''}" data-tab="${x.id}">${x.name}</button>`).join('');
+    `<button class="tab ${x.id === state.active ? 'on' : ''}" data-tab="${x.id}">${x.short}</button>`).join('');
   const sg = document.getElementById('startG'), cg = document.getElementById('curG');
   if(document.activeElement !== sg) sg.value = D().startG;
   if(document.activeElement !== cg) cg.value = D().curG;
@@ -240,27 +299,26 @@ function render(){
 
   document.getElementById('main').innerHTML = m.groups.map((g, gi) => `
     <section class="group" style="--c:${g.color || 'var(--blue)'}">
-      <div class="ghead">
-        <div class="gtitle">${g.title}</div>
-        ${g.reset ? `<button class="reset" data-reset="${gi}">${g.reset.label}</button>` : ''}
-      </div>
-      <div class="grid ${g.single ? 'one' : ''}">
+      <div class="gtitle">${g.title}</div>
+      <div class="tiles">
         ${g.items.map(it => `
           <button class="tile" data-inc="${it.id}">
-            <div class="lbl">${it.label}</div>
-            <div class="num">${cnt(it.id)}</div>
+            <span class="lbl">${it.label}</span>
+            <span class="num">${cnt(it.id)}</span>
             <span class="minus" data-dec="${it.id}" role="button" aria-label="${it.label}を1減らす">−</span>
           </button>`).join('')}
       </div>
       ${g.stats && g.stats.length ? `<div class="stats">${g.stats.map(st =>
-        `<div>${st.label} <b>${statText(st)}</b></div>`).join('')}</div>` : ''}
+        `<div>${st.label ? st.label + ' ' : ''}<b>${statText(st)}</b></div>`).join('')}</div>` : ''}
+      ${(g.stats || []).filter(st => st.log).map(st => logHtml(st)).join('')}
+      ${g.reset ? `<button class="reset" data-reset="${gi}">${g.reset.label}</button>` : ''}
     </section>`).join('');
 }
 
 /* ================= イベント ================= */
 document.addEventListener('click', e => {
   const tab = e.target.closest('[data-tab]');
-  if(tab){ state.active = tab.dataset.tab; save(); render(); window.scrollTo(0,0); return; }
+  if(tab){ state.active = tab.dataset.tab; save(); render(); return; }
   const dec = e.target.closest('[data-dec]');
   if(dec){ change(dec.dataset.dec, -1); return; }
   const inc = e.target.closest('[data-inc]');
@@ -273,10 +331,8 @@ const clearBtn = document.getElementById('clearBtn');
 clearBtn.addEventListener('click', () => armed(clearBtn, '全リセット', clearAll));
 ['startG','curG'].forEach(id => {
   const el = document.getElementById(id);
-  el.addEventListener('input', () => {
-    D()[id] = el.value; save();
-    render(); // 消化G・確率表示を更新
-  });
+  el.addEventListener('input', () => { D()[id] = el.value; save(); render(); });
+  el.addEventListener('keydown', e => { if(e.key === 'Enter') el.blur(); });
 });
 /* ダブルタップ拡大を防止 */
 let lastTouch = 0;
